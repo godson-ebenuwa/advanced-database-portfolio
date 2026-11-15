@@ -1,0 +1,25 @@
+
+=== BEFORE indexes ===
+statement (account + 90 days, newest first)    | stages: SORT > COLLSCAN | keys: 0 | docs: 50120 | avg ms: 292.55
+customer by email                              | stages: COLLSCAN | keys: 0 | docs: 2000 | avg ms: 110.50
+accounts of customer                           | stages: COLLSCAN | keys: 0 | docs: 3004 | avg ms: 224.40
+
+=== Creating indexes ===
+accountNumber_1_createdAt_-1       equality field first, sort/range field second (like Portfolio 2)
+email_1                            login/teller lookup, enforces uniqueness
+bvn_1                              regulatory identifier must be unique
+accountNumber_1                    natural key
+customerId_1                       reference lookup (documents have no automatic FK indexes)
+big_txn_partial                    PARTIAL: only transactions >= NGN 1,000,000 (AML monitoring), tiny index
+createdAt_1                        TTL: documents expire automatically after 5 minutes
+
+=== AFTER indexes ===
+statement (account + 90 days, newest first)    | stages: FETCH > IXSCAN | keys: 126 | docs: 126 | avg ms: 301.20
+customer by email                              | stages: IXSCAN | keys: 1 | docs: 1 | avg ms: 108.50
+accounts of customer                           | stages: FETCH > IXSCAN | keys: 2 | docs: 2 | avg ms: 217.25
+
+=== Unique index enforcement (duplicate email must be rejected) ===
+Rejected as expected: E11000 duplicate key error collection: lagos_trust_bank_nosql.customer
+
+=== Index sizes (bytes) ===
+transactions data size: 11754276 | total index size: 2424832

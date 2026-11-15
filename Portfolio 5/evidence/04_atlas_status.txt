@@ -1,0 +1,11 @@
+Atlas replica set : atlas-77lt72-shard-0
+Connected to      : ac-hghnsyk-shard-00-01.rnv9qly.mongodb.net:27017 (PRIMARY)
+Primary           : ac-hghnsyk-shard-00-01.rnv9qly.mongodb.net:27017
+All members       :
+    ac-hghnsyk-shard-00-00.rnv9qly.mongodb.net:27017
+    ac-hghnsyk-shard-00-01.rnv9qly.mongodb.net:27017
+    ac-hghnsyk-shard-00-02.rnv9qly.mongodb.net:27017
+
+20 inserts with w:"majority" over the internet: 112.2 ms each
+20 inserts with w:1 over the internet          : 109.5 ms each
+(most of the time is network distance from your laptop to the Atlas region)

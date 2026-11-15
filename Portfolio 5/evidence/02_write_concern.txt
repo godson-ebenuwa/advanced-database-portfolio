@@ -1,0 +1,18 @@
+
+=== 1. Write concern: how many nodes must confirm before the write is acknowledged? ===
+w:1 (primary only)             100 inserts:    223 ms total, 2.23 ms each
+w:"majority" (2 of 3 nodes)    100 inserts:    413 ms total, 4.13 ms each
+w:3 (all nodes)                100 inserts:    434 ms total, 4.34 ms each
+=> stronger guarantees cost latency. Money movements should use w:"majority".
+
+=== 2. Read preference: read from a SECONDARY ===
+count read from a secondary : 300
+count read from the primary : 300
+
+=== 3. Can a secondary return STALE data? write with w:1, then immediately read from a secondary ===
+stale reads: 0 out of 300
+On one laptop replication takes microseconds, so 0 is common here. Across the internet (Atlas, other
+regions) lag is real. The point is that a secondary read is only EVENTUALLY consistent.
+
+=== 4. Read concern "majority": only return data a majority of nodes have confirmed ===
+majority-read count: 600

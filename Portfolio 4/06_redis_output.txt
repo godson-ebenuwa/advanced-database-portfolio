@@ -1,0 +1,94 @@
+
+=== 1. Balance cache (read-heavy; expires so stale data cannot live long) ===
+> SET balance:0123456789 25000000 EX 60
+OK
+> GET balance:0123456789
+25000000
+> TTL balance:0123456789
+60
+> DECRBY balance:0123456789 5000000
+20000000
+> GET balance:0123456789
+20000000
+
+=== 2. Idempotency key: SET NX means only the FIRST request with this reference wins ===
+> SET idem:TRF-1001 processing NX EX 86400
+OK
+> SET idem:TRF-1001 processing NX EX 86400
+
+> GET idem:TRF-1001
+processing
+
+=== 3. Login brute-force protection: at most 5 failed attempts per 15 minutes ===
+attempt 1: count=1 -> allowed
+attempt 2: count=2 -> allowed
+attempt 3: count=3 -> allowed
+attempt 4: count=4 -> allowed
+attempt 5: count=5 -> allowed
+attempt 6: count=6 -> BLOCKED
+> TTL fail:08011111111
+900
+
+=== 4. One-time password with automatic expiry (2 seconds here; 300 in production) ===
+> SET otp:08011111111 482913 EX 2
+OK
+> GET otp:08011111111
+482913
+(waiting 3 seconds...)
+> GET otp:08011111111
+
+
+=== 5. Short-lived lock so two workers cannot process the same account at once ===
+> SET lock:acct:0123456789 worker-A NX PX 5000
+OK
+> SET lock:acct:0123456789 worker-B NX PX 5000
+
+> PTTL lock:acct:0123456789
+4993
+> DEL lock:acct:0123456789
+1
+> SET lock:acct:0123456789 worker-B NX PX 5000
+OK
+
+=== 6. Session as a hash ===
+> HSET session:abc123 customerNo C000001 device DEV000000 channel MOBILE
+3
+> EXPIRE session:abc123 1800
+1
+> HGETALL session:abc123
+customerNo
+C000001
+device
+DEV000000
+channel
+MOBILE
+
+=== 7. Real-time leaderboard: today's biggest spenders (sorted set) ===
+> ZINCRBY spend:2026-11-14 150000 C000001
+150000
+> ZINCRBY spend:2026-11-14 90000 C000002
+90000
+> ZINCRBY spend:2026-11-14 420000 C000003
+420000
+> ZINCRBY spend:2026-11-14 60000 C000001
+210000
+> ZREVRANGE spend:2026-11-14 0 2 WITHSCORES
+C000003
+420000
+C000001
+210000
+C000002
+90000
+> ZREVRANK spend:2026-11-14 C000001
+1
+
+=== Memory and keys ===
+> DBSIZE
+6
+> KEYS *
+spend:2026-11-14
+idem:TRF-1001
+balance:0123456789
+lock:acct:0123456789
+session:abc123
+fail:08011111111

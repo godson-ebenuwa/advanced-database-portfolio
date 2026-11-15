@@ -1,0 +1,139 @@
+Timing is on.
+Time: 68.752 ms
+                                                              QUERY PLAN                                                               
+---------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=16.29..16.30 rows=3 width=41) (actual time=0.065..0.066 rows=11 loops=1)
+   Sort Key: created_at DESC
+   Sort Method: quicksort  Memory: 25kB
+   Buffers: shared hit=14 read=3
+   ->  Bitmap Heap Scan on account_transaction  (cost=4.46..16.27 rows=3 width=41) (actual time=0.040..0.052 rows=11 loops=1)
+         Recheck Cond: ((account_id = 9689) AND (created_at >= (now() - '90 days'::interval)))
+         Heap Blocks: exact=11
+         Buffers: shared hit=11 read=3
+         ->  Bitmap Index Scan on idx_txn_account_created  (cost=0.00..4.46 rows=3 width=0) (actual time=0.035..0.035 rows=11 loops=1)
+               Index Cond: ((account_id = 9689) AND (created_at >= (now() - '90 days'::interval)))
+               Buffers: shared read=3
+ Planning:
+   Buffers: shared hit=22
+ Planning Time: 0.167 ms
+ Execution Time: 0.082 ms
+(15 rows)
+
+Time: 0.647 ms
+                                                          QUERY PLAN                                                          
+------------------------------------------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on customer  (cost=5.63..250.01 rows=131 width=50) (actual time=0.029..0.328 rows=135 loops=1)
+   Recheck Cond: (((last_name)::text = 'Okafor'::text) AND ((first_name)::text = 'Adaeze'::text))
+   Heap Blocks: exact=116
+   Buffers: shared hit=116 read=2
+   ->  Bitmap Index Scan on idx_customer_name  (cost=0.00..5.60 rows=131 width=0) (actual time=0.017..0.017 rows=135 loops=1)
+         Index Cond: (((last_name)::text = 'Okafor'::text) AND ((first_name)::text = 'Adaeze'::text))
+         Buffers: shared read=2
+ Planning:
+   Buffers: shared hit=105 read=1
+ Planning Time: 0.222 ms
+ Execution Time: 0.342 ms
+(11 rows)
+
+Time: 0.927 ms
+                                                                 QUERY PLAN                                                                  
+---------------------------------------------------------------------------------------------------------------------------------------------
+ Nested Loop  (cost=0.29..10.44 rows=1 width=40) (actual time=0.032..0.035 rows=2 loops=1)
+   Join Filter: (a.branch_id = b.branch_id)
+   Rows Removed by Join Filter: 1
+   Buffers: shared hit=5 read=2
+   ->  Nested Loop  (cost=0.29..9.37 rows=1 width=33) (actual time=0.030..0.032 rows=2 loops=1)
+         Join Filter: (t.type_id = a.type_id)
+         Rows Removed by Join Filter: 1
+         Buffers: shared hit=3 read=2
+         ->  Index Scan using idx_account_customer on account a  (cost=0.29..8.30 rows=1 width=27) (actual time=0.025..0.025 rows=2 loops=1)
+               Index Cond: (customer_id = 7777)
+               Buffers: shared hit=1 read=2
+         ->  Seq Scan on account_type t  (cost=0.00..1.03 rows=3 width=14) (actual time=0.001..0.001 rows=2 loops=2)
+               Buffers: shared hit=2
+   ->  Seq Scan on branch b  (cost=0.00..1.03 rows=3 width=15) (actual time=0.001..0.001 rows=2 loops=2)
+         Buffers: shared hit=2
+ Planning:
+   Buffers: shared hit=172 read=2
+ Planning Time: 0.309 ms
+ Execution Time: 0.082 ms
+(19 rows)
+
+Time: 0.621 ms
+                                                                      QUERY PLAN                                                                      
+------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=1622.75..1625.85 rows=1240 width=41) (actual time=7.303..7.353 rows=1225 loops=1)
+   Sort Key: tr.initiated_at DESC
+   Sort Method: quicksort  Memory: 135kB
+   Buffers: shared hit=782 read=5
+   ->  Hash Join  (cost=1014.99..1559.04 rows=1240 width=41) (actual time=6.048..6.988 rows=1225 loops=1)
+         Hash Cond: (tr.from_account_id = a.account_id)
+         Buffers: shared hit=782 read=5
+         ->  Bitmap Heap Scan on transfer tr  (cost=29.90..570.70 rows=1240 width=34) (actual time=0.165..0.812 rows=1225 loops=1)
+               Recheck Cond: ((initiated_at >= (now() - '90 days'::interval)) AND ((status)::text = 'FAILED'::text))
+               Heap Blocks: exact=472
+               Buffers: shared hit=472 read=5
+               ->  Bitmap Index Scan on idx_transfer_failed_recent  (cost=0.00..29.59 rows=1240 width=0) (actual time=0.125..0.125 rows=1225 loops=1)
+                     Index Cond: (initiated_at >= (now() - '90 days'::interval))
+                     Buffers: shared read=5
+         ->  Hash  (cost=610.04..610.04 rows=30004 width=15) (actual time=5.752..5.753 rows=30004 loops=1)
+               Buckets: 32768  Batches: 1  Memory Usage: 1663kB
+               Buffers: shared hit=310
+               ->  Seq Scan on account a  (cost=0.00..610.04 rows=30004 width=15) (actual time=0.006..2.228 rows=30004 loops=1)
+                     Buffers: shared hit=310
+ Planning:
+   Buffers: shared hit=99 read=6
+ Planning Time: 0.373 ms
+ Execution Time: 7.407 ms
+(23 rows)
+
+Time: 7.997 ms
+                                                                 QUERY PLAN                                                                  
+---------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=2274.69..2274.71 rows=10 width=49) (actual time=26.974..26.980 rows=10 loops=1)
+   Buffers: shared hit=624
+   ->  Sort  (cost=2274.69..2324.32 rows=19853 width=49) (actual time=26.973..26.977 rows=10 loops=1)
+         Sort Key: (sum(a.balance)) DESC
+         Sort Method: top-N heapsort  Memory: 26kB
+         Buffers: shared hit=624
+         ->  HashAggregate  (cost=1597.51..1845.67 rows=19853 width=49) (actual time=17.004..24.225 rows=15501 loops=1)
+               Group Key: c.customer_id
+               Batches: 1  Memory Usage: 6929kB
+               Buffers: shared hit=621
+               ->  Hash Join  (cost=761.07..1498.24 rows=19853 width=25) (actual time=3.650..9.452 rows=19853 loops=1)
+                     Hash Cond: (a.customer_id = c.customer_id)
+                     Buffers: shared hit=621
+                     ->  Seq Scan on account a  (cost=0.00..685.05 rows=19853 width=12) (actual time=0.005..2.644 rows=19853 loops=1)
+                           Filter: ((status)::text = 'ACTIVE'::text)
+                           Rows Removed by Filter: 10151
+                           Buffers: shared hit=310
+                     ->  Hash  (cost=511.03..511.03 rows=20003 width=17) (actual time=3.628..3.629 rows=20003 loops=1)
+                           Buckets: 32768  Batches: 1  Memory Usage: 1226kB
+                           Buffers: shared hit=311
+                           ->  Seq Scan on customer c  (cost=0.00..511.03 rows=20003 width=17) (actual time=0.002..1.676 rows=20003 loops=1)
+                                 Buffers: shared hit=311
+ Planning:
+   Buffers: shared hit=36 read=2
+ Planning Time: 0.195 ms
+ Execution Time: 27.066 ms
+(26 rows)
+
+Time: 27.699 ms
+                                                               QUERY PLAN                                                               
+----------------------------------------------------------------------------------------------------------------------------------------
+ GroupAggregate  (cost=42029.40..50279.40 rows=300000 width=57) (actual time=151.052..226.777 rows=26 loops=1)
+   Group Key: (date_trunc('month'::text, created_at)), txn_type
+   Buffers: shared hit=3812, temp read=1327 written=1332
+   ->  Sort  (cost=42029.40..42779.40 rows=300000 width=25) (actual time=148.995..178.663 rows=300000 loops=1)
+         Sort Key: (date_trunc('month'::text, created_at)), txn_type
+         Sort Method: external merge  Disk: 10616kB
+         Buffers: shared hit=3812, temp read=1327 written=1332
+         ->  Seq Scan on account_transaction  (cost=0.00..7559.00 rows=300000 width=25) (actual time=0.009..55.606 rows=300000 loops=1)
+               Buffers: shared hit=3809
+ Planning:
+   Buffers: shared hit=14
+ Planning Time: 0.098 ms
+ Execution Time: 227.325 ms
+(13 rows)
+
+Time: 227.775 ms

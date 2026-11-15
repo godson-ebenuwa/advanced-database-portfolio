@@ -1,0 +1,32 @@
+### Balance before:
+ account_id |  balance  
+------------+-----------
+          1 | 250000.00
+          2 | 800000.00
+(2 rows)
+
+### Session 1 output:
+S1: read balance 250000.00
+ pg_sleep 
+----------
+ 
+(1 row)
+
+S1: UPDATE issued: balance = 250000.00 - 1000
+S1: COMMIT issued (acts as ROLLBACK if the transaction was aborted)
+### Session 2 output:
+S2: read balance 250000.00
+ pg_sleep 
+----------
+ 
+(1 row)
+
+S2: UPDATE issued: balance = 250000.00 - 2000
+S2: COMMIT issued (acts as ROLLBACK if the transaction was aborted)
+### Balance after:
+ account_id |  balance  
+------------+-----------
+          1 | 248000.00
+          2 | 800000.00
+(2 rows)
+
